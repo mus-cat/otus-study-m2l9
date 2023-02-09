@@ -1,0 +1,9 @@
+[Unit]
+Description=Avaery 30 sec run checklog service
+
+[Timer]
+OnUnitInactiveSec=30
+OnBootSec=30
+
+[Install]
+WantedBy=multi-user.target

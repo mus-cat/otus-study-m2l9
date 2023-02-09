@@ -1,0 +1,7 @@
+[Unit]
+Descritpion=Check some defined log for present some word
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/checklog.conf
+ExecStart=/opt/checklog.sh

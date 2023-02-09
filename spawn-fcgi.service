@@ -1,0 +1,9 @@
+[Unit]
+Description=Try to start spawn-fsgi as service
+
+[Service]
+EnvironmentFile=/etc/spawn-fcgi.conf
+ExecStart=/opt/spawn-fcgi.sh
+
+[Install]
+WantedBy=multi-user.target

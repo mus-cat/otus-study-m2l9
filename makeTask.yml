@@ -1,0 +1,78 @@
+---
+- name: Systemd
+  hosts: all
+  become: yes
+  gather_facts: no
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.7
+
+  tasks:
+    - name: Install needed packages
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - nginx
+        - php
+        - php-cli
+        - php-cgi
+        - spawn-fcgi
+
+    - name: Copy files to locations
+      copy:
+        src: "{{ item.file }}"
+        dest: "{{ item.loc }}/"
+      loop:
+        - { file: "checklog.service", loc: "/etc/systemd/system" }
+        - { file: "checklog.sh", loc: "/opt" }
+        - { file: "checklog.timer", loc: "/etc/systemd/system" }
+        - { file: "checklog.conf", loc: "/etc" }
+        - { file: "spawn-fcgi.conf", loc: "/etc" }
+        - { file: "spawn-fcgi.sh", loc: "/opt" }
+        - { file: "spawn-fcgi.service", loc: "/etc/systemd/system" }
+        - { file: "nginx@.service", loc: "/etc/systemd/system" }
+        - { file: "nginx-first.conf", loc: "/etc/nginx" }
+        - { file: "nginx-second.conf", loc: "/etc/nginx" }
+
+    - name: Set script permission
+      file:
+        path: "/opt/{{item}}.sh"
+        mode: "u+rx"
+      loop:
+        - "checklog"
+        - "spawn-fcgi"
+
+    - name: Prepare nginx directory
+      file:
+        state: directory
+        dest: "/etc/nginx/sites-enabled-{{item}}"
+      loop:
+        - first
+        - second
+
+    - name: Prepare first deafult files
+      shell:
+        cmd: sed /etc/nginx/sites-enabled/default -e "{s/\ 80\ /\ 8001\ /}" -e "{s/:80\ /:8001\ /}" > /etc/nginx/sites-enabled-first/default
+
+    - name: Prepare second deafult files
+      shell:
+        cmd: sed /etc/nginx/sites-enabled/default -e "{s/\ 80\ /\ 8002\ /}" -e "{s/:80\ /:8002\ /}" > /etc/nginx/sites-enabled-second/default
+
+    - name: Enable systemctl parts
+      shell:
+        cmd: systemctl enable {{item}}
+      loop:
+        - checklog.timer
+        - spawn-fcgi.service
+        - nginx@.service
+
+    - name: Start service
+      service:
+        state: started
+        name: "{{item}}"
+      loop:
+        - checklog.timer
+        - spawn-fcgi.service
+        - nginx@first.service
+        - nginx@second.service
+
